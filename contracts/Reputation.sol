@@ -149,9 +149,9 @@ contract Reputation {
 	_addEdge(msg.sender,friendAddr);
     }
 
-    function initialMember(){
-	Member ownerMbr = Member(owner, "");
-	members[owner] = ownerMbr;
+    function _initialMember(address ownerAddr){
+	Member memory ownerMbr = Member(ownerAddr, "");
+	members[ownerAddr] = ownerMbr;
     }
 
     function createMember(address newMemberAddr){
