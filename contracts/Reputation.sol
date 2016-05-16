@@ -126,7 +126,7 @@ contract Reputation {
 	//delete members[msg.sender].edges[removed];
     }
 
-    function removeNode(address nodeAddr){
+    function _removeNode(address nodeAddr){
 	Member node = members[nodeAddr];
 	//        string edgeId = node.neighbors;
 	while(!(stringsEqual(node.neighbors,""))){
@@ -137,8 +137,22 @@ contract Reputation {
 	delete members[nodeAddr];
     }
 
+    function leaveGraph(){
+	_removeNode(msg.sender);
+    }
 
+    function removeFriend(address friendAddr){
+	_removeEdge(msg.sender,friendAddr);
+    }
 
+    function addFriend(address friendAddr){
+	_addEdge(msg.sender,friendAddr);
+    }
+
+    function initialMember(){
+	Member ownerMbr = Member(owner, "");
+	members[owner] = ownerMbr;
+    }
 
     function createMember(address newMemberAddr){
 	Member creator = members[msg.sender];
