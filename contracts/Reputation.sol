@@ -39,6 +39,7 @@ contract Reputation {
     //mapping () memberCount
     mapping (address => Member) members;
     mapping (string => EdgeLL) edges;
+    uint numMembers; // number of members
 
     struct Member {
 	address addr;
@@ -56,6 +57,10 @@ contract Reputation {
 	string previousFrom;
 	string nextTo;
 	string previousTo;
+    }
+
+    function getNumMembers() returns (uint){
+	return(numMembers);
     }
 
     function edgeString(address fromAddr,address toAddr) returns (string){
@@ -135,6 +140,7 @@ contract Reputation {
 	}
 
 	delete members[nodeAddr];
+	numMembers -=1;
     }
 
     function leaveGraph(){
@@ -152,12 +158,17 @@ contract Reputation {
     function _initialMember(address ownerAddr){
 	Member memory ownerMbr = Member(ownerAddr, "");
 	members[ownerAddr] = ownerMbr;
+	numMembers = 1;
     }
 
-    function createMember(address newMemberAddr){
+    function createMember(address newMemberAddr) returns (bool){
+	if(members[newMemberAddr].addr == 0)
+	    return false;
 	Member creator = members[msg.sender];
 	members[newMemberAddr] = Member(newMemberAddr, "");
 	_addEdge(msg.sender, newMemberAddr);
 	_addEdge(newMemberAddr,msg.sender);
+	numMembers += 1;
+	return true;
     }
 }
