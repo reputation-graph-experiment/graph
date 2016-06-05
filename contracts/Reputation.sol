@@ -42,12 +42,11 @@ contract Reputation {
 
   mapping (address => Member) members;
   mapping (string => EdgeLL) edges;
-  uint numMembers;
+  uint public numMembers;
 
+  // Members are nodes of the graph
   struct Member {
-    address addr;
-    string neighbors;
-    //mapping (address => string) edges;
+    string neighbors; // Edge string-ID in ``edges``
   }
 
   // A -> B is stored both in A and B's neighbors, so that it is easy to
@@ -74,106 +73,107 @@ contract Reputation {
     Member friender = members[fromAddr];
     Member newFriend = members[toAddr];
 
+    // New Edge ID
+    string memory edgeId = _edgeString(fromAddr, toAddr);
+
     // From
     string oldFromRootEdgeStr = friender.neighbors;
     EdgeLL oldFromRootEdge = edges[oldFromRootEdgeStr];
-    string memory edgeId = _edgeString(fromAddr, toAddr);
     friender.neighbors = edgeId;
     oldFromRootEdge.previousFrom = edgeId;
-    //friender.edges[toAddr] = edgeId;
 
     // To
     string oldToRootEdgeStr = newFriend.neighbors;
     EdgeLL oldToRootEdge = edges[oldToRootEdgeStr];
     newFriend.neighbors = edgeId;
     oldToRootEdge.previousTo = edgeId;
-    //newFriend.edges[toAddr] = edgeId;
 
-    //From and To
+    // New Edge
     edges[edgeId] = EdgeLL(friender, newFriend,
                            oldFromRootEdgeStr, "",
                            oldToRootEdgeStr, "");
   }
 
-  function _removeEdge(address fromAddr, address toAddr) internal {
-    string memory edgeId = _edgeString(fromAddr, toAddr);
+  function _removeEdgeId(string edgeId) internal {
     EdgeLL e = edges[edgeId];
 
     // From
-    Member from = members[fromAddr];
-    if (stringsEqual(e.previousFrom, "")){
+    Member from = e.from;
+    if (stringsEqual(e.previousFrom, "")) {
       from.neighbors = e.nextFrom;
-    }
-    else{
+    } else {
       edges[e.previousFrom].nextFrom = e.nextFrom;
     }
-    if (stringsEqual(e.nextFrom, ""))
+    if (stringsEqual(e.nextFrom, "")) {
       from.neighbors = "";
-    else{
+    } else {
       edges[e.nextFrom].previousFrom = e.previousFrom;
     }
 
     // To
-    Member to = members[toAddr];
-    if (stringsEqual(e.previousTo, "")){
+    Member to = e.to;
+    if (stringsEqual(e.previousTo, "")) {
       to.neighbors = e.nextTo;
-    } else{
+    } else {
       edges[e.previousTo].nextTo = e.nextTo;
     }
-    if (stringsEqual(e.nextTo, "")){
+    if (stringsEqual(e.nextTo, "")) {
       to.neighbors = "";
-    }else{
+    } else {
       edges[e.nextTo].previousTo = e.previousTo;
     }
 
-    delete(edges[edgeId]);
-    //delete members[msg.sender].edges[removed];
+    delete edges[edgeId];
   }
 
-  function _removeNode(address nodeAddr) internal {
-    Member node = members[nodeAddr];
-    //        string edgeId = node.neighbors;
-    while (!(stringsEqual(node.neighbors, ""))) {
-      EdgeLL e = edges[node.neighbors];
-      _removeEdge(e.from.addr, e.to.addr);
+  function _removeEdgeByAddr(
+    address fromAddr, address toAddr
+  ) internal {
+    _removeEdgeId(_edgeString(fromAddr, toAddr));
+  }
+
+  // Member-stuff //
+
+  function _addMember(address addr) internal {
+    members[addr] = Member("");
+    numMembers += 1;
+  }
+
+  function _removeMember(address addr) internal {
+    Member m = members[addr];
+
+    // Remove all edges
+    while (!stringsEqual(m.neighbors, "")) {
+      _removeEdgeId(m.neighbors);
     }
 
-    delete members[nodeAddr];
-    numMembers -=1;
+    delete members[addr];
+    numMembers -= 1;
   }
 
-
-  function _initialMember(address ownerAddr) internal {
-    Member memory ownerMbr = Member(ownerAddr, "");
-    members[ownerAddr] = ownerMbr;
-    numMembers = 1;
-  }
 
   // External interface //////////////////////////////////////////////
 
-  function getNumMembers() returns (uint) {
-    return(numMembers);
+  // [TODO] - Remove (numMembers is already public)
+  function getNumMembers() external returns (uint) {
+    return numMembers;
   }
 
-  function createMember(
-    address newMemberAddr
-  ) external returns (bool) {
-    if (members[newMemberAddr].addr != 0)
-      return false;
-    Member creator = members[msg.sender];
-    members[newMemberAddr] = Member(newMemberAddr, "");
-    _addEdge(msg.sender, newMemberAddr);
-    _addEdge(newMemberAddr,msg.sender);
-    numMembers += 1;
-    return true;
+  function createMember (address newMemberAddr) external  {
+    // Don't create if the newMemberAddr corresponding object exists
+    if (bytes(members[newMemberAddr].neighbors).length == 0 ) {
+      _addMember(newMemberAddr);
+      _addEdge(msg.sender, newMemberAddr);
+      _addEdge(newMemberAddr, msg.sender);
+    }
   }
 
   function leaveGraph() external {
-    _removeNode(msg.sender);
+    _removeMember(msg.sender);
   }
 
   function removeFriend(address friendAddr) external {
-    _removeEdge(msg.sender,friendAddr);
+    _removeEdgeByAddr(msg.sender, friendAddr);
   }
 
   function addFriend(address friendAddr) external {
