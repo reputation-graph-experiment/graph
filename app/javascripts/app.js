@@ -11,7 +11,7 @@ function setStatus(message) {
 function refreshNumMembers() {
   var reputation = Reputation.deployed();
 
-  reputation.numMembers.call(account, {from: account})
+  reputation.getNumMembers.call(account, {from: account})
     .then(function(value) {
       var members_element = document.getElementById("numMembers");
       members_element.innerHTML = value.valueOf();
