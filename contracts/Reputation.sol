@@ -57,6 +57,7 @@ contract Reputation {
   }
 
   // 2 addresses => one string
+  // [TODO] - Use hashing instead of concat of 2 strings
   function _edgeString (
     address fromAddr, address toAddr
   ) internal returns (string) {
