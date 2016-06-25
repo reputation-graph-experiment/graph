@@ -32,11 +32,6 @@ contract Reputation {
       b[i] = byte(uint8(uint(x) / (2**(8*(19 - i)))));
     }
   }
-
-  // [TODO] - Remove? (pretty useless)
-  function toString(bytes b) returns (string){
-    return string(b);
-  }
   
   // ATTRIBUTES ///////////////////////////////////////////////////////////
 
@@ -65,8 +60,8 @@ contract Reputation {
   function _edgeString (
     address fromAddr, address toAddr
   ) internal returns (string) {
-    return strConcat(toString(toBytes(fromAddr)),
-                     toString(toBytes(toAddr)));
+    return strConcat(string(toBytes(fromAddr)),
+                     string(toBytes(toAddr)));
   }
 
   function _addEdge(address fromAddr, address toAddr) internal {
@@ -153,11 +148,6 @@ contract Reputation {
 
 
   // External interface //////////////////////////////////////////////
-
-  // [TODO] - Remove (numMembers is already public)
-  function getNumMembers() external returns (uint) {
-    return numMembers;
-  }
 
   function createMember (address newMemberAddr) external  {
     // Don't create if the newMemberAddr corresponding object exists
